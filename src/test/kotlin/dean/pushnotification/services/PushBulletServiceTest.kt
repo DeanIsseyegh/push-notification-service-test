@@ -1,5 +1,7 @@
 package dean.pushnotification.services
 
+import dean.pushnotification.domain.User
+import dean.pushnotification.domain.UserRepository
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -23,22 +25,49 @@ class PushBulletServiceTest {
 
     @Autowired private var pushBulletService: PushBulletService? = null
     @MockBean private var restTemplateBuilder: RestTemplateBuilder? = null
+    @MockBean private var userRepository: UserRepository? = null
 
     @Test
-    fun sendsPushBulletRequest() {
+    fun sendsPushBulletRequestAndReturnsResponse() {
         val restTemplate = mock(RestTemplate::class.java)
         `when`(restTemplateBuilder?.build()).thenReturn(restTemplate)
         val pushBulletRequest = PushBulletRequest("x", "y", "z")
+        val expectedResponse = PushBulletResponse()
+        val httpEntity = createHttpEntity(pushBulletRequest)
+        stubRestTemplatePost(restTemplate, httpEntity, expectedResponse)
+        val response = pushBulletService?.sendPush("1234", pushBulletRequest)
+        verifyRequestOnlySentOnce(restTemplate, httpEntity)
+        assertThat(response, `is`(expectedResponse))
+    }
 
-        pushBulletService?.sendPush("1234", pushBulletRequest)
+    @Test
+    fun incrementsUserCount() {
+        val user = mock(User::class.java)
+        pushBulletService?.incrementCounter(user)
+        verify(user, times(1)).incrementCounter()
+        verify(userRepository, times(1))?.save(user)
+    }
 
+    fun stubRestTemplatePost(restTemplate: RestTemplate, httpEntity: HttpEntity<PushBulletRequest>, expectedResponse: PushBulletResponse) {
+        `when`(restTemplate
+                .postForObject(pushBulletService?.URL,
+                        httpEntity,
+                        PushBulletResponse::class.java))
+                .thenReturn(expectedResponse)
+    }
+
+    fun verifyRequestOnlySentOnce(restTemplate: RestTemplate, httpEntity: HttpEntity<PushBulletRequest>) {
+        verify(restTemplate, times(1))
+                .postForObject(pushBulletService?.URL,
+                        httpEntity,
+                        PushBulletResponse::class.java)
+    }
+
+    fun createHttpEntity(pushBulletRequest: PushBulletRequest): HttpEntity<PushBulletRequest> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_JSON
         headers.add("Access-Token", "1234")
-        var httpEntity = HttpEntity<PushBulletRequest>(pushBulletRequest, headers)
-
-        verify(restTemplate, times(1))
-                .postForObject(pushBulletService?.URL, httpEntity, String::class.java)
+        return HttpEntity(pushBulletRequest, headers)
     }
 
 }

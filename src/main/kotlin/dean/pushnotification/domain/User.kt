@@ -12,6 +12,10 @@ import javax.persistence.TemporalType.TIMESTAMP
         var accessToken: String = "",
         var numOfNotificationsPushed: Int = 0,
         @CreatedDate @Temporal(TIMESTAMP) var creationTime: Date? = null,
-        @GeneratedValue @Id var id: Long? = null)
+        @GeneratedValue @Id var id: Long? = null) {
 
-//PESSIMISTIC_WRITE
+    fun incrementCounter() {
+        this.numOfNotificationsPushed++
+    }
+
+}

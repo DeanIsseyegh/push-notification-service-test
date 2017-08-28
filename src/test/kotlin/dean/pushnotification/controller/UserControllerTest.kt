@@ -9,15 +9,19 @@ import dean.pushnotification.services.DTOTransformService
 import dean.pushnotification.services.PushBulletRequest
 import dean.pushnotification.services.PushBulletService
 import org.hamcrest.Matchers.`is`
+import org.junit.Assert
 import org.junit.Assert.assertThat
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 import org.mockito.Mockito.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.web.client.HttpClientErrorException
 import java.util.*
 
 
@@ -80,5 +84,22 @@ class UserControllerTest {
         userController?.push(pushRequest, 1)
         val pushBulletRequest = PushBulletRequest("body", "title", "type")
         verify(pushBulletService, times(1))?.sendPush("1234", pushBulletRequest)
+        verify(pushBulletService, times(1))?.incrementCounter(user)
+    }
+
+    @Test
+    fun givenUserExistsButThereIsAPushBulletExceptionThenThrowExceptionAndDoNotIncrement() {
+        val pushRequest = PushRequest("username", "body", "title", "type")
+        val user = User("username", "1234")
+        `when`(userRepository?.findByUsername("username")).thenReturn(Optional.of(user))
+        val pushBulletRequest = PushBulletRequest("body", "title", "type")
+        `when`(pushBulletService?.sendPush("1234", pushBulletRequest))
+                .thenThrow(HttpClientErrorException::class.java)
+        try {
+            userController?.push(pushRequest, 1)
+            assertTrue(false)
+        } catch (ex: HttpClientErrorException) {
+            verify(pushBulletService, times(0))?.incrementCounter(user)
+        }
     }
 }
