@@ -1,5 +1,6 @@
-package dean.pushnotification
+package dean.pushnotification.domain
 
+import dean.pushnotification.domain.User
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.Optional
 
