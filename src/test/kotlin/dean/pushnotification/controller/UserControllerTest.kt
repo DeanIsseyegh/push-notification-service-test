@@ -4,7 +4,10 @@ import dean.pushnotification.domain.User
 import dean.pushnotification.domain.UserDTO
 import dean.pushnotification.domain.UserRepository
 import dean.pushnotification.exception.UserAlreadyExistsException
+import dean.pushnotification.exception.UserDoesNotExistException
 import dean.pushnotification.services.DTOTransformService
+import dean.pushnotification.services.PushBulletRequest
+import dean.pushnotification.services.PushBulletService
 import org.hamcrest.Matchers.`is`
 import org.junit.Assert.assertThat
 import org.junit.Test
@@ -22,14 +25,10 @@ import java.util.*
 @SpringBootTest
 class UserControllerTest {
 
-    @Autowired
-    private val userController: UserController? = null
-
-    @MockBean
-    private val dtoTransformerService: DTOTransformService? = null
-
-    @MockBean
-    private val userRepository: UserRepository? = null
+    @Autowired private val userController: UserController? = null
+    @MockBean private val dtoTransformerService: DTOTransformService? = null
+    @MockBean private val userRepository: UserRepository? = null
+    @MockBean private val pushBulletService: PushBulletService? = null
 
     @Test
     fun registersAUserWithNameAndToken() {
@@ -67,4 +66,19 @@ class UserControllerTest {
         assertThat(response, `is`(listOf()))
     }
 
+    @Test(expected = UserDoesNotExistException::class)
+    fun givenUserDoesNotExistThenThrowException() {
+        val pushRequest = PushRequest("username", "body", "title", "type")
+        userController?.push(pushRequest, 1)
+    }
+
+    @Test
+    fun givenUserExistsThenSendPushBulletRequest() {
+        val pushRequest = PushRequest("username", "body", "title", "type")
+        val user = User("username", "1234")
+        `when`(userRepository?.findByUsername("username")).thenReturn(Optional.of(user))
+        userController?.push(pushRequest, 1)
+        val pushBulletRequest = PushBulletRequest("body", "title", "type")
+        verify(pushBulletService, times(1))?.sendPush("1234", pushBulletRequest)
+    }
 }

@@ -13,4 +13,10 @@ class ExceptionHandlingController {
         val response = ExceptionResponse("Already Exists", ex.message)
         return ResponseEntity(response, HttpStatus.CONFLICT)
     }
+
+    @ExceptionHandler(UserDoesNotExistException::class)
+    fun userDoesNotExist(ex: UserDoesNotExistException) : ResponseEntity<ExceptionResponse> {
+        val response = ExceptionResponse("Already Exists", ex.message)
+        return ResponseEntity(response, HttpStatus.NOT_FOUND)
+    }
 }

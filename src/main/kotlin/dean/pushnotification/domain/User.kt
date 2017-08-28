@@ -13,3 +13,5 @@ import javax.persistence.TemporalType.TIMESTAMP
         var numOfNotificationsPushed: Int = 0,
         @CreatedDate @Temporal(TIMESTAMP) var creationTime: Date? = null,
         @GeneratedValue @Id var id: Long? = null)
+
+//PESSIMISTIC_WRITE
